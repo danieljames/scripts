@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+if [ $# -eq 0 ];
+then
+    COMMAND=install
+else
+    case "$1" in
+        install)
+            COMMAND=$1
+            ;;
+        update)
+            COMMAND=$1
+            ;;
+        *)
+            echo "Usage: $0 [install|setup]"
+            exit 1
+            ;;
+    esac
+fi
+
+PACKAGE_LOCATION=$(realpath $(dirname $(realpath $0))/../..)
+
+echo "Setting up at '$PACKAGE_LOCATION'"
+echo "with command '$COMMAND'."
+echo
+echo Running composer:
+echo
+
+cd $PACKAGE_LOCATION/share/daniels-scripts/php
+composer $COMMAND
+
+echo
+echo Finished

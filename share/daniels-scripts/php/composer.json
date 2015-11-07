@@ -1,0 +1,9 @@
+ {
+    "name": "calamity/neon-composer",
+    "description": "Simple script for running composer with neon files.",
+    "require": {
+        "nette/neon": "*"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

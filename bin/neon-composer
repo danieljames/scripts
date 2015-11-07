@@ -1,0 +1,30 @@
+#!/bin/sh -e
+
+php -- $(dirname $(realpath $0)) <<'END_OF_PHP'
+<?php
+use Nette\Neon\Neon;
+
+require_once($argv[1].'/../share/daniels-scripts/php/vendor/autoload.php');
+
+if (is_readable('composer.neon')) {
+    echo "Converting neon file.\n";
+    file_put_contents('composer.json',
+        json_encode(
+            Neon::decode(file_get_contents('composer.neon')),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+        )."\n"
+    );
+}
+else if (is_readable('composer.json')) {
+    echo "Using json file.\n";
+}
+else {
+    echo "No composer.json or composer.neon found.\n";
+    exit(1);
+}
+END_OF_PHP
+
+if [ $# -gt 0 ];
+then
+    exec composer $@
+fi

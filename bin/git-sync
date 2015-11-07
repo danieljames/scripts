@@ -1,0 +1,134 @@
+#!/bin/sh -e
+
+# Parse options
+
+OPTS_SPEC="\
+git-sync [options]
+
+Updates your local branches from their remotes.
+--
+h,help      show the help
+
+fetch*      Fetch the remotes first (default).
+no-fetch    Don't fetch the remotes first.
+push        Push local changes.
+no-push*    Don't push local changes to changes (default).
+"
+
+eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt -- "$@" || echo exit $?)"
+
+fetch=true
+push=false
+
+while test $# -ne 0
+do
+    case "$1" in
+        --fetch)
+            fetch=true
+            shift
+            ;;
+        --no-fetch)
+            fetch=false
+            shift
+            ;;
+        --push)
+            push=true
+            shift
+            ;;
+        --no-push)
+            push=false
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Fetch remotes
+
+if [ "$fetch" = "true" ]
+then
+    echo Fetch:
+    git fetch --all 2>&1 | sed 's/^/  /'
+fi
+
+# Update branches
+
+echo Update branches:
+
+if ! current_branch=$(git symbolic-ref --short -q HEAD)
+then
+    current_branch='NO CURRENT BRANCH'
+fi
+
+# For each local branch
+git for-each-ref --format='%(refname:short) %(upstream:short) %(upstream)' refs/heads |
+while read branch upstream upstream_long
+do
+    if [ "$branch" = "$current_branch" ]
+    then
+        prefix=" *$branch"
+    else
+        prefix="  $branch"
+    fi
+
+    if [ "$upstream" = "" ]
+    then
+        echo "$prefix: No upstream."
+        continue
+    fi
+
+    prefix="$prefix($upstream)"
+
+    # Check if upstram and branch are the same
+    upstream_rev=$(git rev-parse $upstream)
+    branch_rev=$(git rev-parse $branch)
+
+    if [ $branch_rev = $upstream_rev ]
+    then
+        echo "$prefix: Up to date."
+        continue
+    fi
+
+    # Since they aren't find the merge base to determine the situation.
+    # Just grab the first merge base, it should be good enough.
+    merge_base=$(git merge-base $branch $upstream)
+
+    if [ $merge_base = $upstream_rev ]
+    then
+
+        if [ "$push" = "true" ]
+        then
+            echo "$prefix: Pushing local changes."
+
+            remote=$(echo $upstream_long | sed 's/^refs\/remotes\/\([^\/]*\)\/\(.*\)/\1/')
+            remote_branch=$(echo $upstream_long | sed 's/^refs\/remotes\/\([^\/]*\)\/\(.*\)/\2/')
+            git push $remote $branch:$remote_branch 2>&1 | sed 's/^/    /'
+        else
+            echo "$prefix: Local changes."
+        fi
+    elif [ $merge_base != $branch_rev ]
+    then
+        echo "$prefix: Branches have diverged."
+    else
+        echo "$prefix: Updating."
+
+        if [ "$branch" = "$current_branch" ]
+        then
+            if ! git merge -q --ff-only $upstream 2>&1 | sed 's/^/    /'
+            then
+                echo "    Failed"
+            fi
+        else
+            if ! git fetch -q . $upstream:$branch 2>&1 | sed 's/^/    /'
+            then
+                echo "    Failed"
+            fi
+        fi
+    fi
+done
