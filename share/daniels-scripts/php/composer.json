@@ -1,4 +1,4 @@
- {
+{
     "name": "calamity/neon-composer",
     "description": "Simple script for running composer with neon files.",
     "require": {
