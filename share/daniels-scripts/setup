@@ -18,7 +18,23 @@ else
     esac
 fi
 
-PACKAGE_LOCATION=$(realpath $(dirname $(realpath $0))/../..)
+if which realpath > /dev/null
+then
+    PACKAGE_LOCATION=$(realpath $(dirname $(realpath $0))/../..)
+elif which grealpath > /dev/null
+then
+    PACKAGE_LOCATION=$(grealpath $(dirname $(grealpath $0))/../..)
+else
+    echo "Warning: No realpath, this might not work if you have a soft link somewhere."
+    echo "Installing 'coreutils' using homebrew or macports should fix this."
+    echo
+
+    CWD=$(pwd)
+    cd $(dirname $0)
+    cd ../../
+    PACKAGE_LOCATION=$(pwd)
+    cd $CWD
+fi
 
 echo "Setting up at '$PACKAGE_LOCATION'"
 echo "with command '$COMMAND'."
