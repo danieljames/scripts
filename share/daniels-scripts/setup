@@ -3,13 +3,16 @@
 if [ $# -eq 0 ];
 then
     COMMAND=install
+    COMPOSER=composer
 else
     case "$1" in
         install)
             COMMAND=$1
+            COMPOSER=composer
             ;;
         update)
             COMMAND=$1
+            COMPOSER=neon-composer
             ;;
         *)
             echo "Usage: $0 [install|setup]"
@@ -53,7 +56,7 @@ echo Running composer:
 echo
 
 cd $PACKAGE_LOCATION/share/daniels-scripts/php
-composer $COMMAND
+$COMPOSER $COMMAND
 
 echo
 echo Finished
