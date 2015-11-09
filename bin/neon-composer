@@ -1,10 +1,11 @@
 #!/bin/sh -e
 
-php -- $(dirname $(realpath $0)) <<'END_OF_PHP'
+php -- $0 <<'END_OF_PHP'
 <?php
 use Nette\Neon\Neon;
 
-require_once($argv[1].'/../share/daniels-scripts/php/vendor/autoload.php');
+$package_dir = realpath(dirname(realpath($argv[1])).'/..');
+require_once($package_dir.'/share/daniels-scripts/php/vendor/autoload.php');
 
 if (is_readable('composer.neon')) {
     echo "Converting neon file.\n";
