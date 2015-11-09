@@ -20,21 +20,31 @@ fi
 
 if which realpath > /dev/null
 then
-    PACKAGE_LOCATION=$(realpath $(dirname $(realpath $0))/../..)
+    # Nothing to do....
+    :
 elif which grealpath > /dev/null
 then
-    PACKAGE_LOCATION=$(grealpath $(dirname $(grealpath $0))/../..)
+    echo "Using grealpath"
+    alias realpath=grealpath
+elif which perl > /dev/null
+then
+    echo "Using perl"
+    realpath() {
+        perl -e 'use Cwd "abs_path"; print abs_path(@ARGV[0])' -- "$1"
+    }
+elif which perl > /dev/null
+then
+    echo "Using php"
+    realpath() {
+        php -r 'echo realpath($argv[1]),"\n";' -- "$1"
+    }
 else
-    echo "Warning: No realpath, this might not work if you have a soft link somewhere."
+    echo "Error: No realpath, grealpath, perl or php."
     echo "Installing 'coreutils' using homebrew or macports should fix this."
-    echo
-
-    CWD=$(pwd)
-    cd $(dirname $0)
-    cd ../../
-    PACKAGE_LOCATION=$(pwd)
-    cd $CWD
+    exit 1
 fi
+
+PACKAGE_LOCATION=$(realpath $(dirname $(realpath $0))/../..)
 
 echo "Setting up at '$PACKAGE_LOCATION'"
 echo "with command '$COMMAND'."
