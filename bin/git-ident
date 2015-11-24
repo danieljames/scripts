@@ -9,6 +9,7 @@ create <account> <name> <email>
 map <account> github|bitbucket <remote-account>
 init <account>
 clone <url> [account]
+key <acount>
 
 --
 h,help      show the help
@@ -38,6 +39,10 @@ main() {
         map)
             shift
             map $@
+            ;;
+        key)
+            shift
+            key $@
             ;;
     esac
 }
@@ -110,6 +115,48 @@ map() {
             ;;
     esac
 
+}
+
+key() {
+    if [ $# -ne 1 ]
+    then
+        echo "Usage: git-ident key <account>"
+        exit 1
+    fi
+
+    account=$1
+    public_file=~/.ssh/git-ident-$account.pub
+
+    if [ ! -f ~/.ssh/git-ident-$account.pub ]
+    then
+        echo "Can't find public key for ${account}"
+        exit 1
+    fi
+
+    echo Key:
+    echo
+    cat $public_file
+    echo
+
+    if which pbcopy > /dev/null
+    then
+        echo "Copying to clipboard using pbcopy"
+        cat $public_file | pbcopy
+    elif which xsel > /dev/null
+    then
+        echo "Copying to clipboard using xsel"
+        cat $public_file | xsel --clipboard --input
+    elif which xclip > /dev/null
+    then
+        echo "Copying to clipboard using xclip"
+        cat $public_file | xclip -selection clipboard
+    elif which putclip > /dev/null
+    then
+        echo "Copying to clipboard using putclip"
+        cat $public_file | putclip
+    else
+        echo "Unable to copy to clipboard"
+    fi
 }
 
 main $@
