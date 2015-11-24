@@ -1,0 +1,115 @@
+#!/bin/sh -e
+
+OPTS_SPEC="\
+git-ident [options] <command>
+
+Clumsy script for managing various git identities. Common commands:
+
+create <account> <name> <email>
+map <account> github|bitbucket <remote-account>
+init <account>
+clone <url> [account]
+
+--
+h,help      show the help
+"
+
+main() {
+    eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt --stop-at-non-option -- "$@" || echo exit $?)"
+
+    while test $# -ne 0
+    do
+        case "$1" in
+            --)
+                shift
+                break
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    case "$1" in
+        create)
+            shift
+            create $@
+            ;;
+        map)
+            shift
+            map $@
+            ;;
+    esac
+}
+
+create() {
+    if [ $# -ne 3 ]
+    then
+        echo "Usage: git-ident add <account> <name> <email>"
+        exit 1
+    fi
+
+    account=$1
+    name=$2
+    email=$3
+
+    identify_file=~/.ssh/git-ident-$account
+
+    if [ -f $identify_file ]
+    then
+        echo "Key already exists, not overwriting"
+    else
+        ssh-keygen -f $identify_file
+    fi
+
+    echo "Adding URL rewrites to git config (probably at ~/.gitconfig)"
+    git config --global "url.github-$account:$account/.insteadOf" "git@github.com:$account/"
+    git config --global "url.bitbucket-$account:$account/.insteadOf" "git@bitbucket.org:$account/"
+
+    echo "Adding identities to ~/.config/git-ident"
+    mkdir -p ~/.config/git-ident
+    git config -f ~/.config/git-ident/identities "identity.$account.name" "$name"
+    git config -f ~/.config/git-ident/identities "identity.$account.email" "$email"
+
+    # TODO: Check if config already has entries....
+    echo "Adding hosts to .ssh/config"
+    echo "Warning: will create duplicates if it already has entries"
+    echo >> ~/.ssh/config
+    echo "# Keys for git identity ${account}" >> ~/.ssh/config
+    echo >> ~/.ssh/config
+    echo Host bitbucket-${account} >> ~/.ssh/config
+    echo Hostname bitbucket.org >> ~/.ssh/config
+    echo IdentityFile $identify_file >> ~/.ssh/config
+    echo >> ~/.ssh/config
+    echo Host github-${account} >> ~/.ssh/config
+    echo Hostname github.com >> ~/.ssh/config
+    echo IdentityFile $identify_file >> ~/.ssh/config
+}
+
+map() {
+    if [ $# -ne 3 ]
+    then
+        echo "Usage: git-ident add <account> github|bitbucket <remote-account>"
+        exit 1
+    fi
+
+    account=$1
+    service=$2
+    remote=$3
+
+    case "$service" in
+        github)
+            git config --global "url.github-$account:$remote/.insteadOf" "git@github.com:$remote/"
+            ;;
+        bitbucket)
+            git config --global "url.bitbucket-$account:$remote/.insteadOf" "git@bitbucket.org:$remote/"
+            ;;
+        *)
+            echo "Unknown service: $service"
+            exit 1
+            ;;
+    esac
+
+}
+
+main $@
