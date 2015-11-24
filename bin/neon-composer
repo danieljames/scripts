@@ -5,6 +5,32 @@ use Nette\Neon\Neon;
 $package_dir = realpath(realpath(__DIR__).'/..');
 require_once($package_dir.'/share/daniels-scripts/php/vendor/autoload.php');
 
+if (isset($argv[1]) && $argv[1] === 'create-neon') {
+    if (!file_exists('composer.json')) {
+        echo "composer.json not found.\n";
+        exit(1);
+    }
+
+    if (!is_readable('composer.json')) {
+        echo "composer.json not readable.\n";
+        exit(1);
+    }
+
+    if (file_exists('composer.neon')) {
+        echo "composer.neon already exists.\n";
+        exit(1);
+    }
+
+    $settings = json_decode(file_get_contents('composer.json'));
+    if (is_null($settings)) {
+        echo "JSON error in composer.json.\n";
+        exit(1);
+    }
+
+    file_put_contents('composer.neon', Neon::encode($settings, Neon::BLOCK));
+    exit(0);
+}
+
 if (is_readable('composer.neon')) {
     echo "Converting neon file.\n";
     file_put_contents('composer.json',
