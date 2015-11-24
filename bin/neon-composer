@@ -1,10 +1,8 @@
-#!/bin/sh -e
-
-php -- $0 <<'END_OF_PHP'
+#!/usr/bin/env php
 <?php
 use Nette\Neon\Neon;
 
-$package_dir = realpath(dirname(realpath($argv[1])).'/..');
+$package_dir = realpath(realpath(__DIR__).'/..');
 require_once($package_dir.'/share/daniels-scripts/php/vendor/autoload.php');
 
 if (is_readable('composer.neon')) {
@@ -23,9 +21,18 @@ else {
     echo "No composer.json or composer.neon found.\n";
     exit(1);
 }
-END_OF_PHP
 
-if [ $# -gt 0 ];
-then
-    exec composer $@
-fi
+if (count($argv) > 1) {
+    if (function_exists('pcntl_exec') && is_executable('/usr/bin/env')) {
+        $args = $argv;
+        $args[0] = 'composer';
+        pcntl_exec('/usr/bin/env', $args);
+        echo "Error running composer.\n";
+        exit(1);
+    }
+    else {
+       $args = array_slice($argv, 1);
+        system('composer '.implode(' ', array_map('escapeshellarg', $args)), $return_val);
+        exit($return_val);
+    }
+}
