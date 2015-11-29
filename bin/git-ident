@@ -49,7 +49,7 @@ main() {
             shift
             key "$@"
             ;;
-        regenerate)
+        regen|regenerate)
             write_config_files
             ;;
         init)
