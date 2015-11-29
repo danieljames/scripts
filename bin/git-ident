@@ -5,6 +5,7 @@ git-ident [options] <command>
 
 Clumsy script for managing various git identities. Common commands:
 
+list
 create <account> <name> <email>
 map <account> github|bitbucket <remote-account>
 init <account>
@@ -33,6 +34,10 @@ main() {
     done
 
     case "$1" in
+        list)
+            shift
+            list "$@"
+            ;;
         create)
             shift
             create "$@"
@@ -49,6 +54,13 @@ main() {
             write_config_files
             ;;
     esac
+}
+
+list() {
+    git config -f ~/.config/git-ident/identities -l |
+        sed -n 's/^identity\.\(.*\)\..*=.*/\1/p' |
+        sort |
+        uniq
 }
 
 create() {
