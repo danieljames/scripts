@@ -50,7 +50,7 @@ main() {
 create() {
     if [ $# -ne 3 ]
     then
-        echo "Usage: git-ident add <account> <name> <email>"
+        echo "Usage: git-ident create <account> <name> <email>"
         exit 1
     fi
 
@@ -95,7 +95,7 @@ create() {
 map() {
     if [ $# -ne 3 ]
     then
-        echo "Usage: git-ident add <account> github|bitbucket <remote-account>"
+        echo "Usage: git-ident map <account> github|bitbucket <remote-account>"
         exit 1
     fi
 
