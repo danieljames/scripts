@@ -9,7 +9,6 @@ list
 create <account> <name> <email>
 map <account> github|bitbucket <remote-account>
 init <account>
-clone <url> [account]
 key <acount>
 regenerate
 
@@ -52,6 +51,10 @@ main() {
             ;;
         regenerate)
             write_config_files
+            ;;
+        init)
+            shift
+            init "$@"
             ;;
     esac
 }
@@ -159,6 +162,24 @@ key() {
     else
         echo "Unable to copy to clipboard"
     fi
+}
+
+init() {
+    if [ $# -ne 1 ]
+    then
+        echo "Usage: git-ident init <account>"
+        exit 1
+    fi
+
+    account=$1
+
+    name=$(git config -f ~/.config/git-ident/identities --get identity.${account}.name)
+    email=$(git config -f ~/.config/git-ident/identities --get identity.${account}.email)
+
+    echo "Committing as: $name <$email>"
+
+    git config user.email "$email"
+    git config user.name "$name"
 }
 
 write_config_files() {
