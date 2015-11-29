@@ -10,6 +10,7 @@ map <account> github|bitbucket <remote-account>
 init <account>
 clone <url> [account]
 key <acount>
+regenerate
 
 --
 h,help      show the help
@@ -44,6 +45,9 @@ main() {
             shift
             key "$@"
             ;;
+        regenerate)
+            write_config_files
+            ;;
     esac
 }
 
@@ -68,28 +72,14 @@ create() {
         ssh-keygen -f $identify_file_path
     fi
 
-    echo "Adding URL rewrites to git config (probably at ~/.gitconfig)"
-    git config --global "url.github-$account:$account/.insteadOf" "git@github.com:$account/"
-    git config --global "url.bitbucket-$account:$account/.insteadOf" "git@bitbucket.org:$account/"
-
     echo "Adding identities to ~/.config/git-ident/identities"
     mkdir -p ~/.config/git-ident
+    git config -f ~/.config/git-ident/identities "identity.$account.key" "$identify_file_text"
+    git config -f ~/.config/git-ident/identities "identity.$account.public" "$identify_file_text.pub"
     git config -f ~/.config/git-ident/identities "identity.$account.name" "$name"
     git config -f ~/.config/git-ident/identities "identity.$account.email" "$email"
 
-    # TODO: Check if config already has entries....
-    echo "Adding hosts to .ssh/config"
-    echo "Warning: will create duplicates if it already has entries"
-    echo >> ~/.ssh/config
-    echo "# Keys for git identity ${account}" >> ~/.ssh/config
-    echo >> ~/.ssh/config
-    echo "Host bitbucket-${account}" >> ~/.ssh/config
-    echo "Hostname bitbucket.org" >> ~/.ssh/config
-    echo "IdentityFile $identify_file_text" >> ~/.ssh/config
-    echo >> ~/.ssh/config
-    echo "Host github-${account}" >> ~/.ssh/config
-    echo "Hostname github.com" >> ~/.ssh/config
-    echo "IdentityFile ${identify_file_text}" >> ~/.ssh/config
+    write_config_files
 }
 
 map() {
@@ -104,11 +94,8 @@ map() {
     remote=$3
 
     case "$service" in
-        github)
-            git config --global "url.github-$account:$remote/.insteadOf" "git@github.com:$remote/"
-            ;;
-        bitbucket)
-            git config --global "url.bitbucket-$account:$remote/.insteadOf" "git@bitbucket.org:$remote/"
+        github|bitbucket)
+            git config -f ~/.config/git-ident/identities --add "identity.$account.map-$service" "$remote"
             ;;
         *)
             echo "Unknown service: $service"
@@ -116,6 +103,7 @@ map() {
             ;;
     esac
 
+    write_config_files
 }
 
 key() {
@@ -126,9 +114,10 @@ key() {
     fi
 
     account=$1
-    public_file=~/.ssh/git-ident-$account.pub
+    public_file_text=$(git config -f ~/.config/git-ident/identities --get identity.${account}.public)
+    public_file_path=$(echo $public_file_text | sed "s@^~\/@${HOME}\/@")
 
-    if [ ! -f ~/.ssh/git-ident-$account.pub ]
+    if [ ! -f $public_file_path ]
     then
         echo "Can't find public key for ${account}"
         exit 1
@@ -136,28 +125,92 @@ key() {
 
     echo Key:
     echo
-    cat $public_file
+    cat $public_file_path
     echo
 
     if which pbcopy > /dev/null
     then
         echo "Copying to clipboard using pbcopy"
-        cat $public_file | pbcopy
+        cat $public_file_path | pbcopy
     elif which xsel > /dev/null
     then
         echo "Copying to clipboard using xsel"
-        cat $public_file | xsel --clipboard --input
+        cat $public_file_path | xsel --clipboard --input
     elif which xclip > /dev/null
     then
         echo "Copying to clipboard using xclip"
-        cat $public_file | xclip -selection clipboard
+        cat $public_file_path | xclip -selection clipboard
     elif which putclip > /dev/null
     then
         echo "Copying to clipboard using putclip"
-        cat $public_file | putclip
+        cat $public_file_path | putclip
     else
         echo "Unable to copy to clipboard"
     fi
+}
+
+write_config_files() {
+    temp_file1=$(mktemp)
+    sed '/# BEGIN GIT IDENT CONFIG/,/# END GIT IDENT CONFIG/d' ~/.ssh/config > $temp_file1
+
+    echo '# BEGIN GIT IDENT CONFIG' >> $temp_file1
+    echo '#' >> $temp_file1
+    echo '# AUTO-GENERATED SETTINGS, DO NOT EDIT' >> $temp_file1
+
+    echo >> $temp_file1
+
+    for x in $(git config -f ~/.config/git-ident/identities -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
+    do
+        IFS=!
+        set $x
+        unset IFS
+
+        account=$1
+        identify_file_text=$2
+
+        echo "# Keys for git identity ${account}" >> $temp_file1
+        echo >> $temp_file1
+        echo "Host bitbucket-${account}" >> $temp_file1
+        echo "Hostname bitbucket.org" >> $temp_file1
+        echo "IdentityFile $identify_file_text" >> $temp_file1
+        echo >> $temp_file1
+        echo "Host github-${account}" >> $temp_file1
+        echo "Hostname github.com" >> $temp_file1
+        echo "IdentityFile ${identify_file_text}" >> $temp_file1
+        echo >> $temp_file1
+    done
+
+    echo '# END GIT IDENT CONFIG' >> $temp_file1
+
+    temp_file2=$(mktemp)
+    echo '# AUTO-GENERATED FILE, DO NOT EDIT' >> $temp_file2
+    echo >> $temp_file2
+
+    for x in $(git config -f ~/.config/git-ident/identities -l | sed -n 's/^identity\.\(.*\)\.map-\(.*\)=\(.*\)/\1!\2!\3/p');
+    do
+        IFS=!
+        set $x
+        unset IFS
+
+        account=$1
+        service=$2
+        remote=$3
+
+        case $service in
+            github)
+                git config -f $temp_file2 "url.github-$account:$remote/.insteadOf" "git@github.com:$remote/"
+                ;;
+            bitbucket)
+                git config -f $temp_file2 "url.bitbucket-$account:$remote/.insteadOf" "git@bitbucket.org:$remote/"
+                ;;
+            *)
+                echo "Unknown mapped service: $service"
+                ;;
+        esac
+    done
+
+    mv $temp_file1 ~/.ssh/config
+    mv $temp_file2 ~/.config/git-ident/gitconfig
 }
 
 main "$@"
