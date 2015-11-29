@@ -72,7 +72,7 @@ create() {
     git config --global "url.github-$account:$account/.insteadOf" "git@github.com:$account/"
     git config --global "url.bitbucket-$account:$account/.insteadOf" "git@bitbucket.org:$account/"
 
-    echo "Adding identities to ~/.config/git-ident"
+    echo "Adding identities to ~/.config/git-ident/identities"
     mkdir -p ~/.config/git-ident
     git config -f ~/.config/git-ident/identities "identity.$account.name" "$name"
     git config -f ~/.config/git-ident/identities "identity.$account.email" "$email"
