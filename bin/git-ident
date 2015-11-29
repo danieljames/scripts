@@ -231,10 +231,10 @@ write_config_files() {
 
         case $service in
             github)
-                git config -f $temp_file2 "url.github-$account:$remote/.insteadOf" "git@github.com:$remote/"
+                git config -f $temp_file2 "url.git@github-$account:$remote/.insteadOf" "git@github.com:$remote/"
                 ;;
             bitbucket)
-                git config -f $temp_file2 "url.bitbucket-$account:$remote/.insteadOf" "git@bitbucket.org:$remote/"
+                git config -f $temp_file2 "url.git@bitbucket-$account:$remote/.insteadOf" "git@bitbucket.org:$remote/"
                 ;;
             *)
                 echo "Unknown mapped service: $service"
