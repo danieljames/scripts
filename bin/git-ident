@@ -34,15 +34,15 @@ main() {
     case "$1" in
         create)
             shift
-            create $@
+            create "$@"
             ;;
         map)
             shift
-            map $@
+            map "$@"
             ;;
         key)
             shift
-            key $@
+            key "$@"
             ;;
     esac
 }
@@ -58,13 +58,14 @@ create() {
     name=$2
     email=$3
 
-    identify_file=~/.ssh/git-ident-$account
+    identify_file_text="~/.ssh/git-ident-$account"
+    identify_file_path=~/.ssh/git-ident-$account
 
-    if [ -f $identify_file ]
+    if [ -f $identify_file_path ]
     then
         echo "Key already exists, not overwriting"
     else
-        ssh-keygen -f $identify_file
+        ssh-keygen -f $identify_file_path
     fi
 
     echo "Adding URL rewrites to git config (probably at ~/.gitconfig)"
@@ -82,13 +83,13 @@ create() {
     echo >> ~/.ssh/config
     echo "# Keys for git identity ${account}" >> ~/.ssh/config
     echo >> ~/.ssh/config
-    echo Host bitbucket-${account} >> ~/.ssh/config
-    echo Hostname bitbucket.org >> ~/.ssh/config
-    echo IdentityFile $identify_file >> ~/.ssh/config
+    echo "Host bitbucket-${account}" >> ~/.ssh/config
+    echo "Hostname bitbucket.org" >> ~/.ssh/config
+    echo "IdentityFile $identify_file_text" >> ~/.ssh/config
     echo >> ~/.ssh/config
-    echo Host github-${account} >> ~/.ssh/config
-    echo Hostname github.com >> ~/.ssh/config
-    echo IdentityFile $identify_file >> ~/.ssh/config
+    echo "Host github-${account}" >> ~/.ssh/config
+    echo "Hostname github.com" >> ~/.ssh/config
+    echo "IdentityFile ${identify_file_text}" >> ~/.ssh/config
 }
 
 map() {
@@ -159,4 +160,4 @@ key() {
     fi
 }
 
-main $@
+main "$@"
