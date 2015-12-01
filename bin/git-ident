@@ -16,6 +16,10 @@ regenerate
 h,help      show the help
 "
 
+GIT_IDENT_CONFIG_PATH=~/.config/git-ident/
+KEY_PATH_PREFIX=~/.ssh/git-ident
+KEY_TEXT_PREFIX="~/.ssh/git-ident"
+
 main() {
     eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt --stop-at-non-option -- "$@" || echo exit $?)"
 
@@ -60,7 +64,7 @@ main() {
 }
 
 list() {
-    git config -f ~/.config/git-ident/identities -l |
+    git config -f ${GIT_IDENT_CONFIG_PATH}/identities -l |
         sed -n 's/^identity\.\(.*\)\..*=.*/\1/p' |
         sort |
         uniq
@@ -77,8 +81,8 @@ create() {
     name=$2
     email=$3
 
-    identify_file_text="~/.ssh/git-ident-$account"
-    identify_file_path=~/.ssh/git-ident-$account
+    identify_file_text="${KEY_TEXT_PREFIX}-$account"
+    identify_file_path=${KEY_PATH_PREFIX}-$account
 
     if [ -f $identify_file_path ]
     then
@@ -87,12 +91,12 @@ create() {
         ssh-keygen -f $identify_file_path
     fi
 
-    echo "Adding identities to ~/.config/git-ident/identities"
+    echo "Adding identities to ${GIT_IDENT_CONFIG_PATH}/identities"
     mkdir -p ~/.config/git-ident
-    git config -f ~/.config/git-ident/identities "identity.$account.key" "$identify_file_text"
-    git config -f ~/.config/git-ident/identities "identity.$account.public" "$identify_file_text.pub"
-    git config -f ~/.config/git-ident/identities "identity.$account.name" "$name"
-    git config -f ~/.config/git-ident/identities "identity.$account.email" "$email"
+    git config -f ${GIT_IDENT_CONFIG_PATH}/identities "identity.$account.key" "$identify_file_text"
+    git config -f ${GIT_IDENT_CONFIG_PATH}/identities "identity.$account.public" "$identify_file_text.pub"
+    git config -f ${GIT_IDENT_CONFIG_PATH}/identities "identity.$account.name" "$name"
+    git config -f ${GIT_IDENT_CONFIG_PATH}/identities "identity.$account.email" "$email"
 
     write_config_files
 }
@@ -110,7 +114,7 @@ map() {
 
     case "$service" in
         github|bitbucket)
-            git config -f ~/.config/git-ident/identities --add "identity.$account.map-$service" "$remote"
+            git config -f ${GIT_IDENT_CONFIG_PATH}/identities --add "identity.$account.map-$service" "$remote"
             ;;
         *)
             echo "Unknown service: $service"
@@ -129,7 +133,7 @@ key() {
     fi
 
     account=$1
-    public_file_text=$(git config -f ~/.config/git-ident/identities --get identity.${account}.public)
+    public_file_text=$(git config -f ${GIT_IDENT_CONFIG_PATH}/identities --get identity.${account}.public)
     public_file_path=$(echo $public_file_text | sed "s@^~\/@${HOME}\/@")
 
     if [ ! -f $public_file_path ]
@@ -173,8 +177,8 @@ init() {
 
     account=$1
 
-    name=$(git config -f ~/.config/git-ident/identities --get identity.${account}.name)
-    email=$(git config -f ~/.config/git-ident/identities --get identity.${account}.email)
+    name=$(git config -f ${GIT_IDENT_CONFIG_PATH}/identities --get identity.${account}.name)
+    email=$(git config -f ${GIT_IDENT_CONFIG_PATH}/identities --get identity.${account}.email)
 
     echo "Committing as: $name <$email>"
 
@@ -192,7 +196,7 @@ write_config_files() {
 
     echo >> $temp_file1
 
-    for x in $(git config -f ~/.config/git-ident/identities -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
+    for x in $(git config -f ${GIT_IDENT_CONFIG_PATH}/identities -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
     do
         IFS=!
         set $x
@@ -219,7 +223,7 @@ write_config_files() {
     echo '# AUTO-GENERATED FILE, DO NOT EDIT' >> $temp_file2
     echo >> $temp_file2
 
-    for x in $(git config -f ~/.config/git-ident/identities -l | sed -n 's/^identity\.\(.*\)\.map-\(.*\)=\(.*\)/\1!\2!\3/p');
+    for x in $(git config -f ${GIT_IDENT_CONFIG_PATH}/identities -l | sed -n 's/^identity\.\(.*\)\.map-\(.*\)=\(.*\)/\1!\2!\3/p');
     do
         IFS=!
         set $x
@@ -243,7 +247,7 @@ write_config_files() {
     done
 
     mv $temp_file1 ~/.ssh/config
-    mv $temp_file2 ~/.config/git-ident/gitconfig
+    mv $temp_file2 ${GIT_IDENT_CONFIG_PATH}/gitconfig
 }
 
 main "$@"
