@@ -6,17 +6,16 @@ KEY_PATH_PREFIX="~/.ssh/git-ident"
 OPTS_SPEC="\
 git-ident [options] <command>
 
-Clumsy script for managing various git identities. Common commands:
+Clumsy script for managing various git identities. Commands:
 
-list
-create <account> <name> <email>
-map <account> github|bitbucket <remote-account>
-init <account>
-key <acount>
-regenerate
+list                                                List available accounts
+create <account> <name> <email>                     Create an account
+map <account> github|bitbucket <remote-account>     Map account to remote account
+init <account>                                      Init repo using account
+key <acount>                                        Write out key, and copy to clipboard
+regenerate                                          Regenerate keys and config files
 
 --
-h,help      show the help
 "
 
 main() {
@@ -63,6 +62,9 @@ main() {
             shift
             init "$@"
             ;;
+        *)
+            echo "Unknown command"
+            eval "$(echo "$OPTS_SPEC" | git rev-parse --parseopt --stop-at-non-option -- -h)"
     esac
 }
 
