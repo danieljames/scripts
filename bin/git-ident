@@ -189,7 +189,9 @@ init() {
 }
 
 write_config_files() {
-    temp_file1=$(mktemp)
+    temp_dir=$(mktemp -d -t git-ident-)
+
+    temp_file1=${temp_dir}/ssh_config
     sed '/# BEGIN GIT IDENT CONFIG/,/# END GIT IDENT CONFIG/d' ~/.ssh/config > $temp_file1
 
     echo '# BEGIN GIT IDENT CONFIG' >> $temp_file1
@@ -221,7 +223,7 @@ write_config_files() {
 
     echo '# END GIT IDENT CONFIG' >> $temp_file1
 
-    temp_file2=$(mktemp)
+    temp_file2=${temp_dir}/gitconfig
     echo '# AUTO-GENERATED FILE, DO NOT EDIT' >> $temp_file2
     echo >> $temp_file2
 
@@ -250,6 +252,7 @@ write_config_files() {
 
     mv $temp_file1 ~/.ssh/config
     mv $temp_file2 $(expand_tilde_path ${GIT_IDENT_CONFIG_PATH}/gitconfig)
+    rmdir $temp_dir
 }
 
 expand_tilde_path() {
