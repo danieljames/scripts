@@ -86,13 +86,13 @@ cmd_create() {
     name=$2
     email=$3
 
-    identify_file_text="${KEY_PATH_PREFIX}-$account"
-    generate_key $account $identify_file_text
+    identity_file_text="${KEY_PATH_PREFIX}-$account"
+    generate_key $account $identity_file_text
 
     echo "Adding identities to ${GIT_IDENT_CONFIG_FILE_TEXT}"
     mkdir -p ~/.config/git-ident
-    git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.key" "$identify_file_text"
-    git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.public" "$identify_file_text.pub"
+    git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.key" "$identity_file_text"
+    git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.public" "$identity_file_text.pub"
     git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.name" "$name"
     git config -f $GIT_IDENT_CONFIG_FILE_PATH "identity.$account.email" "$email"
 
@@ -197,24 +197,24 @@ generate_keys() {
         unset IFS
 
         account=$1
-        identify_file_text=$2
+        identity_file_text=$2
 
-        generate_key $account $identify_file_text
+        generate_key $account $identity_file_text
     done
 }
 
 generate_key() {
     account=$1
-    identify_file_text=$2
+    identity_file_text=$2
 
-    identify_file_path=$(expand_tilde_path $identify_file_text)
+    identity_file_path=$(expand_tilde_path $identity_file_text)
 
-    if [ -f $identify_file_path ]
+    if [ -f $identity_file_path ]
     then
         echo "Key already exists for account '${account}'"
     else
         echo "Generate key for account '${account}'"
-        ssh-keygen -f $identify_file_path
+        ssh-keygen -f $identity_file_path
     fi
 }
 
@@ -238,17 +238,17 @@ write_config_files() {
         unset IFS
 
         account=$1
-        identify_file_text=$2
+        identity_file_text=$2
 
         echo "# Keys for git identity ${account}" >> $temp_file1
         echo >> $temp_file1
         echo "Host bitbucket-${account}" >> $temp_file1
         echo "Hostname bitbucket.org" >> $temp_file1
-        echo "IdentityFile $identify_file_text" >> $temp_file1
+        echo "IdentityFile $identity_file_text" >> $temp_file1
         echo >> $temp_file1
         echo "Host github-${account}" >> $temp_file1
         echo "Hostname github.com" >> $temp_file1
-        echo "IdentityFile ${identify_file_text}" >> $temp_file1
+        echo "IdentityFile ${identity_file_text}" >> $temp_file1
         echo >> $temp_file1
     done
 
