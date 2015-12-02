@@ -40,27 +40,27 @@ main() {
     case "$1" in
         list)
             shift
-            list "$@"
+            cmd_list "$@"
             ;;
         create)
             shift
-            create "$@"
+            cmd_create "$@"
             ;;
         map)
             shift
-            map "$@"
+            cmd_map "$@"
             ;;
         key)
             shift
-            key "$@"
+            cmd_key "$@"
             ;;
         regen|regenerate)
-            generate_keys
-            write_config_files
+            shift
+            cmd_regenerate "$@"
             ;;
         init)
             shift
-            init "$@"
+            cmd_init "$@"
             ;;
         *)
             echo "Unknown command"
@@ -68,14 +68,14 @@ main() {
     esac
 }
 
-list() {
+cmd_list() {
     git config -f $GIT_IDENT_CONFIG_FILE_PATH -l |
         sed -n 's/^identity\.\(.*\)\..*=.*/\1/p' |
         sort |
         uniq
 }
 
-create() {
+cmd_create() {
     if [ $# -ne 3 ]
     then
         echo "Usage: git-ident create <account> <name> <email>"
@@ -125,7 +125,7 @@ generate_keys() {
     done
 }
 
-map() {
+cmd_map() {
     if [ $# -ne 3 ]
     then
         echo "Usage: git-ident map <account> github|bitbucket <remote-account>"
@@ -149,7 +149,7 @@ map() {
     write_config_files
 }
 
-key() {
+cmd_key() {
     if [ $# -ne 1 ]
     then
         echo "Usage: git-ident key <account>"
@@ -192,7 +192,12 @@ key() {
     fi
 }
 
-init() {
+cmd_regenerate() {
+    generate_keys
+    write_config_files
+}
+
+cmd_init() {
     if [ $# -ne 1 ]
     then
         echo "Usage: git-ident init <account>"
