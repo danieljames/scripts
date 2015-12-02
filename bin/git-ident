@@ -87,14 +87,7 @@ cmd_create() {
     email=$3
 
     identify_file_text="${KEY_PATH_PREFIX}-$account"
-    identify_file_path=$(expand_tilde_path $identify_file_text)
-
-    if [ -f $identify_file_path ]
-    then
-        echo "Key already exists, not overwriting"
-    else
-        ssh-keygen -f $identify_file_path
-    fi
+    generate_key $account $identify_file_text
 
     echo "Adding identities to ${GIT_IDENT_CONFIG_FILE_TEXT}"
     mkdir -p ~/.config/git-ident
@@ -106,6 +99,21 @@ cmd_create() {
     write_config_files
 }
 
+generate_key() {
+    account=$1
+    identify_file_text=$2
+
+    identify_file_path=$(expand_tilde_path $identify_file_text)
+
+    if [ -f $identify_file_path ]
+    then
+        echo "Key already exists for account '${account}'"
+    else
+        echo "Generate key for account '${account}'"
+        ssh-keygen -f $identify_file_path
+    fi
+}
+
 generate_keys() {
     for x in $(git config -f $GIT_IDENT_CONFIG_FILE_PATH -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
     do
@@ -115,13 +123,8 @@ generate_keys() {
 
         account=$1
         identify_file_text=$2
-        identify_file_path=$(expand_tilde_path $identify_file_text)
 
-        if [ ! -f $identify_file_path ]
-        then
-            echo "Generate key for ${account}"
-            ssh-keygen -f $identify_file_path
-        fi
+        generate_key $account $identify_file_text
     done
 }
 
