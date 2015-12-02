@@ -216,7 +216,8 @@ cmd_init() {
 }
 
 write_config_files() {
-    temp_dir=$(mktemp -d -t git-ident-)
+    # From http://unix.stackexchange.com/a/84980
+    temp_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'git-ident')
 
     temp_file1=${temp_dir}/ssh_config
     sed '/# BEGIN GIT IDENT CONFIG/,/# END GIT IDENT CONFIG/d' ~/.ssh/config > $temp_file1
