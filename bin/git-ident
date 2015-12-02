@@ -99,35 +99,6 @@ cmd_create() {
     write_config_files
 }
 
-generate_key() {
-    account=$1
-    identify_file_text=$2
-
-    identify_file_path=$(expand_tilde_path $identify_file_text)
-
-    if [ -f $identify_file_path ]
-    then
-        echo "Key already exists for account '${account}'"
-    else
-        echo "Generate key for account '${account}'"
-        ssh-keygen -f $identify_file_path
-    fi
-}
-
-generate_keys() {
-    for x in $(git config -f $GIT_IDENT_CONFIG_FILE_PATH -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
-    do
-        IFS=!
-        set $x
-        unset IFS
-
-        account=$1
-        identify_file_text=$2
-
-        generate_key $account $identify_file_text
-    done
-}
-
 cmd_map() {
     if [ $# -ne 3 ]
     then
@@ -216,6 +187,35 @@ cmd_init() {
 
     git config user.email "$email"
     git config user.name "$name"
+}
+
+generate_keys() {
+    for x in $(git config -f $GIT_IDENT_CONFIG_FILE_PATH -l | sed -n 's/^identity\.\(.*\)\.key=\(.*\)/\1!\2/p');
+    do
+        IFS=!
+        set $x
+        unset IFS
+
+        account=$1
+        identify_file_text=$2
+
+        generate_key $account $identify_file_text
+    done
+}
+
+generate_key() {
+    account=$1
+    identify_file_text=$2
+
+    identify_file_path=$(expand_tilde_path $identify_file_text)
+
+    if [ -f $identify_file_path ]
+    then
+        echo "Key already exists for account '${account}'"
+    else
+        echo "Generate key for account '${account}'"
+        ssh-keygen -f $identify_file_path
+    fi
 }
 
 write_config_files() {
