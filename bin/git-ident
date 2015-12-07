@@ -180,13 +180,33 @@ cmd_init() {
 
     account=$1
 
-    name=$(git config -f $GIT_IDENT_CONFIG_FILE_PATH --get identity.${account}.name)
-    email=$(git config -f $GIT_IDENT_CONFIG_FILE_PATH --get identity.${account}.email)
+    if ! git config -f $GIT_IDENT_CONFIG_FILE_PATH --get-regexp "^identity\\.${account}\\." > /dev/null
+    then
+        echo "Error: account not found for '${account}'."
+        exit 1
+    fi
 
-    echo "Committing as: $name <$email>"
+    if ! email=$(git config -f $GIT_IDENT_CONFIG_FILE_PATH --get identity.${account}.email)
+    then
+        echo "Error: email not found for '${account}'."
+        exit 1
+    fi
 
-    git config user.email "$email"
-    git config user.name "$name"
+    if name=$(git config -f $GIT_IDENT_CONFIG_FILE_PATH --get identity.${account}.name)
+    then
+        git config --local user.name "$name"
+    else
+        if old_name=$(git config --local --get user.name)
+        then
+            echo "Warning: name not found for '${account}', removing local setting: ${old_name}."
+            git config --local --unset user.name
+        else
+            echo "Warning: name not found for '${account}'."
+        fi
+    fi
+
+    git config --local user.email "$email"
+    echo "Committing as: $(git config --get user.name) <$(git config --get user.email)>"
 }
 
 generate_keys() {
