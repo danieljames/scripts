@@ -54,7 +54,7 @@ done
 if [ "$fetch" = "true" ]
 then
     echo Fetch:
-    git fetch --all 2>&1 | sed 's/^/  /'
+    git fetch -p --all 2>&1 | sed 's/^/  /'
 fi
 
 # Update branches
