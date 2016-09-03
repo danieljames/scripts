@@ -85,6 +85,14 @@ do
 
     prefix="$prefix($upstream)"
 
+    # Check if the upstream branch actually exists.
+    # Sometimes it will have been pruned.
+    if ! git rev-parse --verify --quiet $upstream > /dev/null
+    then
+        echo "$prefix: Upstream doesn't exist."
+        continue
+    fi
+
     # Check if upstram and branch are the same
     upstream_rev=$(git rev-parse $upstream)
     branch_rev=$(git rev-parse $branch)
