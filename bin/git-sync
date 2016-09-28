@@ -61,8 +61,11 @@ fi
 
 echo Update branches:
 
-if ! current_branch=$(git symbolic-ref --short -q HEAD)
+if current_branch1=$(git symbolic-ref -q HEAD)
 then
+    # TODO: Pretty bad.
+    current_branch=$(echo $current_branch1 | sed 's/^refs\/heads\///')
+else
     current_branch='NO CURRENT BRANCH'
 fi
 
